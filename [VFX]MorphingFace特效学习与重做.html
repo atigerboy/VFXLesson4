@@ -1,0 +1,58 @@
+<html>
+<head>
+  <title>Evernote Export</title>
+  <basefont face="微软雅黑" size="2" />
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+  <meta name="exporter-version" content="YXBJ Windows/603450 (zh-CN, DDL); Windows/10.0.0 (Win64); EDAMVersion=V2;"/>
+  <meta name="content-class" content="yinxiang.markdown"/>
+  <style>
+    body, td {
+      font-family: 微软雅黑;
+      font-size: 10pt;
+    }
+  </style>
+</head>
+<body>
+<a name="6613"/>
+
+<div><span><div style="font-size: 14px; margin: 0; padding: 0; width: 100%;"><h1 style="line-height: 160%; box-sizing: content-box; font-weight: 700; font-size: 41px; border-bottom: 3px double #999; color: #000; margin-top: 14px;">Unity 官方示例分析与重做·MorphingFace</h1>
+<h2 style="line-height: 160%; box-sizing: content-box; font-weight: 700; font-size: 34px; border-bottom: 1px solid #dbdbdb; color: #333;">分析过程</h2>
+<ol style="line-height: 160%; box-sizing: content-box; display: block; padding-left: 30px; margin: 6px 0 10px; color: #333; list-style-type: decimal;">
+<li style="line-height: 160%; box-sizing: content-box;">拖动vfx对象，粒子跟随vfx对象===&gt;粒子使用local mode来模拟</li>
+<li style="line-height: 160%; box-sizing: content-box;">粒子有两个状态：状态1，粒子齐整 颜色偏黄，大小 状态2，粒子散乱，颜色黑褐色 大小变化</li>
+<li style="line-height: 160%; box-sizing: content-box;">粒子的状态切换根据周期性变动的水平线 变化，在线之下的粒子呈现状态1，线之上的粒子呈现状态2</li>
+<li style="line-height: 160%; box-sizing: content-box;">粒子没有位置变动，有大小，朝向，颜色的变化</li>
+<li style="line-height: 160%; box-sizing: content-box;">粒子没有闪烁，没有看见明显的销毁的效果</li>
+<li style="line-height: 160%; box-sizing: content-box;">粒子为基本的cube</li>
+</ol>
+<p style="line-height: 160%; box-sizing: content-box; margin: 10px 0; color: #333;"><img src="[VFX]MorphingFace特效学习与重做_files/face.gif" type="image/gif" data-filename="face.gif"/></p>
+<h2 style="line-height: 160%; box-sizing: content-box; font-weight: 700; font-size: 34px; border-bottom: 1px solid #dbdbdb; color: #333;">原Graph的分析</h2>
+<p style="line-height: 160%; box-sizing: content-box; margin: 10px 0; color: #333;">原Graph的结构比较简单，但是使用了point cloud，在新的版本中可以考虑使用mesh sample来实现。<br/>
+initialize context部分<br/>
+<img src="[VFX]MorphingFace特效学习与重做_files/Image.png" type="image/png" data-filename="Image.png"/><br/>
+其中颜色与位置都是从Point Cache中读取，设置了随机的角度，以及随机y方向缩放</p>
+<p style="line-height: 160%; box-sizing: content-box; margin: 10px 0; color: #333;">因为没有每帧做的变化，Update Context内容为空。</p>
+<p style="line-height: 160%; box-sizing: content-box; margin: 10px 0; color: #333;">output部分的设置,disable的部分为实际没有起到作用的部分。</p>
+<p style="line-height: 160%; box-sizing: content-box; margin: 10px 0; color: #333;"><img src="[VFX]MorphingFace特效学习与重做_files/Image [1].png" type="image/png" data-filename="Image.png"/></p>
+<p style="line-height: 160%; box-sizing: content-box; margin: 10px 0; color: #333;">这里要注意 output的设置并不会更改整个system的粒子状态，每次渲染都会从system的属性跟当前设置进行计算，然后产生新的数据副本，进行渲染，这也是为什么一个system可以连接多个output的情况。</p>
+<h2 style="line-height: 160%; box-sizing: content-box; font-weight: 700; font-size: 34px; border-bottom: 1px solid #dbdbdb; color: #333;">重做</h2>
+<p style="line-height: 160%; box-sizing: content-box; margin: 10px 0; color: #333;">因为我们并没有Face的原模型，所以使用了一个新的模型 Ethan（来自standard Assets/Characters）</p>
+<p style="line-height: 160%; box-sizing: content-box; margin: 10px 0; color: #333;">导入时设置read/write为true<br/>
+<img src="[VFX]MorphingFace特效学习与重做_files/Image [2].png" type="image/png" data-filename="Image.png"/></p>
+<p style="line-height: 160%; box-sizing: content-box; margin: 10px 0; color: #333;">采样选择 从surface处采样，并且coordinates设置为Barycentric（ x y z和为1 z由1-x-y 求得，x y都大于0）<br/>
+<img src="[VFX]MorphingFace特效学习与重做_files/Image [3].png" type="image/png" data-filename="Image.png"/></p>
+<p style="line-height: 160%; box-sizing: content-box; margin: 10px 0; color: #333;">采样的数据有position，Texcoord0<br/>
+<img src="[VFX]MorphingFace特效学习与重做_files/Image [4].png" type="image/png" data-filename="Image.png"/></p>
+<p style="line-height: 160%; box-sizing: content-box; margin: 10px 0; color: #333;">其中uv信息从base texture上采样颜色</p>
+<h2 style="line-height: 160%; box-sizing: content-box; font-weight: 700; font-size: 34px; border-bottom: 1px solid #dbdbdb; color: #333;">调整</h2>
+<p style="line-height: 160%; box-sizing: content-box; margin: 10px 0; color: #333;">注意到替换模型之后，模型大小发生了变化 因此要调整Y轴的范围以及boundbox的信息<br/>
+相对比较简单的做法是 设置一个AABox 然后将其连接到Initialize Context的boundbox上<br/>
+然后在Scene中编辑调整<br/>
+<img src="[VFX]MorphingFace特效学习与重做_files/Image [5].png" type="image/png" data-filename="Image.png"/> <img src="[VFX]MorphingFace特效学习与重做_files/Image [6].png" type="image/png" data-filename="Image.png"/></p>
+<p style="line-height: 160%; box-sizing: content-box; margin: 10px 0; color: #333;">依据坐标y的动画调整模块的节点调整如下：<br/>
+注意里面写的常量就要跟AABox的参数关联起来了<br/>
+<img src="[VFX]MorphingFace特效学习与重做_files/Image [7].png" type="image/png" data-filename="Image.png"/></p>
+<p style="line-height: 160%; box-sizing: content-box; margin: 10px 0; color: #333;">最终的效果如下<br/>
+<img src="[VFX]MorphingFace特效学习与重做_files/face2.gif" type="image/gif" data-filename="face2.gif"/></p>
+</div><center style="display:none !important;visibility:collapse !important;height:0 !important;white-space:nowrap;width:100%;overflow:hidden">%23%20Unity%20%E5%AE%98%E6%96%B9%E7%A4%BA%E4%BE%8B%E5%88%86%E6%9E%90%E4%B8%8E%E9%87%8D%E5%81%9A%C2%B7MorphingFace%0A%0A%23%23%20%E5%88%86%E6%9E%90%E8%BF%87%E7%A8%8B%0A%0A1.%20%E6%8B%96%E5%8A%A8vfx%E5%AF%B9%E8%B1%A1%EF%BC%8C%E7%B2%92%E5%AD%90%E8%B7%9F%E9%9A%8Fvfx%E5%AF%B9%E8%B1%A1%3D%3D%3D%3E%E7%B2%92%E5%AD%90%E4%BD%BF%E7%94%A8local%20mode%E6%9D%A5%E6%A8%A1%E6%8B%9F%0A2.%20%E7%B2%92%E5%AD%90%E6%9C%89%E4%B8%A4%E4%B8%AA%E7%8A%B6%E6%80%81%EF%BC%9A%E7%8A%B6%E6%80%811%EF%BC%8C%E7%B2%92%E5%AD%90%E9%BD%90%E6%95%B4%20%E9%A2%9C%E8%89%B2%E5%81%8F%E9%BB%84%EF%BC%8C%E5%A4%A7%E5%B0%8F%20%E7%8A%B6%E6%80%812%EF%BC%8C%E7%B2%92%E5%AD%90%E6%95%A3%E4%B9%B1%EF%BC%8C%E9%A2%9C%E8%89%B2%E9%BB%91%E8%A4%90%E8%89%B2%20%E5%A4%A7%E5%B0%8F%E5%8F%98%E5%8C%96%0A3.%20%E7%B2%92%E5%AD%90%E7%9A%84%E7%8A%B6%E6%80%81%E5%88%87%E6%8D%A2%E6%A0%B9%E6%8D%AE%E5%91%A8%E6%9C%9F%E6%80%A7%E5%8F%98%E5%8A%A8%E7%9A%84%E6%B0%B4%E5%B9%B3%E7%BA%BF%20%E5%8F%98%E5%8C%96%EF%BC%8C%E5%9C%A8%E7%BA%BF%E4%B9%8B%E4%B8%8B%E7%9A%84%E7%B2%92%E5%AD%90%E5%91%88%E7%8E%B0%E7%8A%B6%E6%80%811%EF%BC%8C%E7%BA%BF%E4%B9%8B%E4%B8%8A%E7%9A%84%E7%B2%92%E5%AD%90%E5%91%88%E7%8E%B0%E7%8A%B6%E6%80%812%0A4.%20%E7%B2%92%E5%AD%90%E6%B2%A1%E6%9C%89%E4%BD%8D%E7%BD%AE%E5%8F%98%E5%8A%A8%EF%BC%8C%E6%9C%89%E5%A4%A7%E5%B0%8F%EF%BC%8C%E6%9C%9D%E5%90%91%EF%BC%8C%E9%A2%9C%E8%89%B2%E7%9A%84%E5%8F%98%E5%8C%96%0A5.%20%E7%B2%92%E5%AD%90%E6%B2%A1%E6%9C%89%E9%97%AA%E7%83%81%EF%BC%8C%E6%B2%A1%E6%9C%89%E7%9C%8B%E8%A7%81%E6%98%8E%E6%98%BE%E7%9A%84%E9%94%80%E6%AF%81%E7%9A%84%E6%95%88%E6%9E%9C%0A6.%20%E7%B2%92%E5%AD%90%E4%B8%BA%E5%9F%BA%E6%9C%AC%E7%9A%84cube%0A%0A!%5B22443fc31090ec8d43405021fa597cd4.gif%5D(en-resource%3A%2F%2Fdatabase%2F6615%3A1)%0A%0A%23%23%20%E5%8E%9FGraph%E7%9A%84%E5%88%86%E6%9E%90%0A%E5%8E%9FGraph%E7%9A%84%E7%BB%93%E6%9E%84%E6%AF%94%E8%BE%83%E7%AE%80%E5%8D%95%EF%BC%8C%E4%BD%86%E6%98%AF%E4%BD%BF%E7%94%A8%E4%BA%86point%20cloud%EF%BC%8C%E5%9C%A8%E6%96%B0%E7%9A%84%E7%89%88%E6%9C%AC%E4%B8%AD%E5%8F%AF%E4%BB%A5%E8%80%83%E8%99%91%E4%BD%BF%E7%94%A8mesh%20sample%E6%9D%A5%E5%AE%9E%E7%8E%B0%E3%80%82%0Ainitialize%20context%E9%83%A8%E5%88%86%0A!%5Be8935f503e95f84354b82f99eee25e85.png%5D(en-resource%3A%2F%2Fdatabase%2F6617%3A1)%0A%E5%85%B6%E4%B8%AD%E9%A2%9C%E8%89%B2%E4%B8%8E%E4%BD%8D%E7%BD%AE%E9%83%BD%E6%98%AF%E4%BB%8EPoint%20Cache%E4%B8%AD%E8%AF%BB%E5%8F%96%EF%BC%8C%E8%AE%BE%E7%BD%AE%E4%BA%86%E9%9A%8F%E6%9C%BA%E7%9A%84%E8%A7%92%E5%BA%A6%EF%BC%8C%E4%BB%A5%E5%8F%8A%E9%9A%8F%E6%9C%BAy%E6%96%B9%E5%90%91%E7%BC%A9%E6%94%BE%0A%0A%E5%9B%A0%E4%B8%BA%E6%B2%A1%E6%9C%89%E6%AF%8F%E5%B8%A7%E5%81%9A%E7%9A%84%E5%8F%98%E5%8C%96%EF%BC%8CUpdate%20Context%E5%86%85%E5%AE%B9%E4%B8%BA%E7%A9%BA%E3%80%82%0A%0Aoutput%E9%83%A8%E5%88%86%E7%9A%84%E8%AE%BE%E7%BD%AE%2Cdisable%E7%9A%84%E9%83%A8%E5%88%86%E4%B8%BA%E5%AE%9E%E9%99%85%E6%B2%A1%E6%9C%89%E8%B5%B7%E5%88%B0%E4%BD%9C%E7%94%A8%E7%9A%84%E9%83%A8%E5%88%86%E3%80%82%0A%0A!%5Bc04312e478dcf55270e20301d3c92a08.png%5D(en-resource%3A%2F%2Fdatabase%2F6619%3A1)%0A%0A%E8%BF%99%E9%87%8C%E8%A6%81%E6%B3%A8%E6%84%8F%20output%E7%9A%84%E8%AE%BE%E7%BD%AE%E5%B9%B6%E4%B8%8D%E4%BC%9A%E6%9B%B4%E6%94%B9%E6%95%B4%E4%B8%AAsystem%E7%9A%84%E7%B2%92%E5%AD%90%E7%8A%B6%E6%80%81%EF%BC%8C%E6%AF%8F%E6%AC%A1%E6%B8%B2%E6%9F%93%E9%83%BD%E4%BC%9A%E4%BB%8Esystem%E7%9A%84%E5%B1%9E%E6%80%A7%E8%B7%9F%E5%BD%93%E5%89%8D%E8%AE%BE%E7%BD%AE%E8%BF%9B%E8%A1%8C%E8%AE%A1%E7%AE%97%EF%BC%8C%E7%84%B6%E5%90%8E%E4%BA%A7%E7%94%9F%E6%96%B0%E7%9A%84%E6%95%B0%E6%8D%AE%E5%89%AF%E6%9C%AC%EF%BC%8C%E8%BF%9B%E8%A1%8C%E6%B8%B2%E6%9F%93%EF%BC%8C%E8%BF%99%E4%B9%9F%E6%98%AF%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%80%E4%B8%AAsystem%E5%8F%AF%E4%BB%A5%E8%BF%9E%E6%8E%A5%E5%A4%9A%E4%B8%AAoutput%E7%9A%84%E6%83%85%E5%86%B5%E3%80%82%0A%0A%23%23%20%E9%87%8D%E5%81%9A%0A%20%E5%9B%A0%E4%B8%BA%E6%88%91%E4%BB%AC%E5%B9%B6%E6%B2%A1%E6%9C%89Face%E7%9A%84%E5%8E%9F%E6%A8%A1%E5%9E%8B%EF%BC%8C%E6%89%80%E4%BB%A5%E4%BD%BF%E7%94%A8%E4%BA%86%E4%B8%80%E4%B8%AA%E6%96%B0%E7%9A%84%E6%A8%A1%E5%9E%8B%20Ethan%EF%BC%88%E6%9D%A5%E8%87%AAstandard%20Assets%2FCharacters%EF%BC%89%0A%20%0A%20%E5%AF%BC%E5%85%A5%E6%97%B6%E8%AE%BE%E7%BD%AEread%2Fwrite%E4%B8%BAtrue%0A%20!%5B393c457fca3fc7cfa2935fd55102e85f.png%5D(en-resource%3A%2F%2Fdatabase%2F6621%3A1)%0A%20%0A%20%E9%87%87%E6%A0%B7%E9%80%89%E6%8B%A9%20%E4%BB%8Esurface%E5%A4%84%E9%87%87%E6%A0%B7%EF%BC%8C%E5%B9%B6%E4%B8%94coordinates%E8%AE%BE%E7%BD%AE%E4%B8%BABarycentric%EF%BC%88%20x%20y%20z%E5%92%8C%E4%B8%BA1%20z%E7%94%B11-x-y%20%E6%B1%82%E5%BE%97%EF%BC%8Cx%20y%E9%83%BD%E5%A4%A7%E4%BA%8E0%EF%BC%89%0A%20!%5B1706114e9003d2f98b5c5cea88e1f701.png%5D(en-resource%3A%2F%2Fdatabase%2F6623%3A1)%0A%20%0A%20%E9%87%87%E6%A0%B7%E7%9A%84%E6%95%B0%E6%8D%AE%E6%9C%89position%EF%BC%8CTexcoord0%0A%20!%5B2bfa607a0f49905a34755a22f02d060d.png%5D(en-resource%3A%2F%2Fdatabase%2F6625%3A1)%0A%20%0A%20%E5%85%B6%E4%B8%ADuv%E4%BF%A1%E6%81%AF%E4%BB%8Ebase%20texture%E4%B8%8A%E9%87%87%E6%A0%B7%E9%A2%9C%E8%89%B2%0A%20%0A%20%23%23%20%E8%B0%83%E6%95%B4%0A%20%E6%B3%A8%E6%84%8F%E5%88%B0%E6%9B%BF%E6%8D%A2%E6%A8%A1%E5%9E%8B%E4%B9%8B%E5%90%8E%EF%BC%8C%E6%A8%A1%E5%9E%8B%E5%A4%A7%E5%B0%8F%E5%8F%91%E7%94%9F%E4%BA%86%E5%8F%98%E5%8C%96%20%E5%9B%A0%E6%AD%A4%E8%A6%81%E8%B0%83%E6%95%B4Y%E8%BD%B4%E7%9A%84%E8%8C%83%E5%9B%B4%E4%BB%A5%E5%8F%8Aboundbox%E7%9A%84%E4%BF%A1%E6%81%AF%0A%20%E7%9B%B8%E5%AF%B9%E6%AF%94%E8%BE%83%E7%AE%80%E5%8D%95%E7%9A%84%E5%81%9A%E6%B3%95%E6%98%AF%20%E8%AE%BE%E7%BD%AE%E4%B8%80%E4%B8%AAAABox%20%E7%84%B6%E5%90%8E%E5%B0%86%E5%85%B6%E8%BF%9E%E6%8E%A5%E5%88%B0Initialize%20Context%E7%9A%84boundbox%E4%B8%8A%0A%20%E7%84%B6%E5%90%8E%E5%9C%A8Scene%E4%B8%AD%E7%BC%96%E8%BE%91%E8%B0%83%E6%95%B4%0A%20!%5B1b6b98f1e1114da4f6831fc98376e1a5.png%5D(en-resource%3A%2F%2Fdatabase%2F6627%3A0)%20!%5B6ff3262328930b0c643c7491f22d852c.png%5D(en-resource%3A%2F%2Fdatabase%2F6629%3A0)%0A%20%0A%20%E4%BE%9D%E6%8D%AE%E5%9D%90%E6%A0%87y%E7%9A%84%E5%8A%A8%E7%94%BB%E8%B0%83%E6%95%B4%E6%A8%A1%E5%9D%97%E7%9A%84%E8%8A%82%E7%82%B9%E8%B0%83%E6%95%B4%E5%A6%82%E4%B8%8B%EF%BC%9A%0A%20%E6%B3%A8%E6%84%8F%E9%87%8C%E9%9D%A2%E5%86%99%E7%9A%84%E5%B8%B8%E9%87%8F%E5%B0%B1%E8%A6%81%E8%B7%9FAABox%E7%9A%84%E5%8F%82%E6%95%B0%E5%85%B3%E8%81%94%E8%B5%B7%E6%9D%A5%E4%BA%86%0A%20!%5B0a0da9bfc56a9c6063b9042c787c3f12.png%5D(en-resource%3A%2F%2Fdatabase%2F6631%3A0)%0A%20%0A%20%E6%9C%80%E7%BB%88%E7%9A%84%E6%95%88%E6%9E%9C%E5%A6%82%E4%B8%8B%0A%20!%5B553c419ef560a6ea7c688fa4d34df0a6.gif%5D(en-resource%3A%2F%2Fdatabase%2F6633%3A0)%0A%20%0A%20%0A%20</center></span>
+</div></body></html> 
