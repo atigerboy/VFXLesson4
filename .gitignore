@@ -1,0 +1,23 @@
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+
+# Code Editors
+/.idea
+/.vscode
+/*.csproj
+/*.sln
+/.vs
+*.swp
+*.vcxproj.user
+*.vsconfig
+/obj
+
+# Unity
+/Library
+/Logs
+/Recordings
+/Temp
